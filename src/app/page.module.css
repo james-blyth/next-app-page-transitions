@@ -1,0 +1,51 @@
+.root {
+	width: 100%;
+	min-height: 100vh;
+	color: white;
+
+	section {
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+		margin-top: 3rem;
+	}
+
+	h2 {
+		font-size: 2rem;
+		margin-bottom: 0.5rem;
+		margin-top: 1rem;
+	}
+
+	p {
+		font-size: 1.1rem;
+		line-height: 1.8;
+		margin: 0;
+		opacity: 0.95;
+	}
+}
+
+.home {
+	background-color: #3b82f6;
+}
+
+.about {
+	background-color: #10b981;
+}
+
+.container {
+	max-width: 720px;
+	display: flex;
+	flex-direction: column;
+	padding: 8rem 0;
+  margin: 0 auto;
+}
+
+.pageTitle {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.pageDescription {
+	font-size: 1.25rem;
+	margin-bottom: 2rem;
+}

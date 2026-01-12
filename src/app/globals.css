@@ -1,0 +1,39 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Ensure smooth transitions with GSAP */
+[data-page-content] {
+  will-change: transform, opacity;
+  visibility: hidden; /* Hide by default until animation starts */
+}
+
+/* Disable interactions and show loading cursor during transitions */
+body.transitioning {
+  cursor: wait;
+  pointer-events: none;
+}
+
+body.transitioning * {
+  pointer-events: none;
+}
+
+/* Page transition overlay */
+.page-transition-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: black;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 999;
+  will-change: opacity;
+}
