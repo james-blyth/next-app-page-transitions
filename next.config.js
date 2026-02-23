@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
 	output: 'export',
+	basePath: '/next-app-page-transitions',
 	compiler: {
 		removeConsole: process.env.NODE_ENV === 'production',
 	},
