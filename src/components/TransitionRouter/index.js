@@ -325,11 +325,8 @@ function TransitionRouter({
 				}
 				// Skip if clicking a link to the current page
 				try {
-					const target = new URL(href, window.location.href)
-					const current = new URL(window.location.href)
-					if (target.pathname === current.pathname && target.search === current.search && target.hash === current.hash) {
-						return
-					}
+					const targetPath = new URL(href, window.location.origin).pathname
+					if (targetPath === pathname) return
 				} catch (_) {}
 				event.preventDefault()
 				navigate(href, pathname)
@@ -641,11 +638,8 @@ function Link(props) {
 
 			// Skip if navigating to the current page
 			try {
-				const target = new URL(getUrlAsString(targetHref), window.location.href)
-				const current = new URL(window.location.href)
-				if (target.pathname === current.pathname && target.search === current.search && target.hash === current.hash) {
-					return
-				}
+				const targetPath = new URL(getUrlAsString(targetHref), window.location.origin).pathname
+				if (targetPath === pathname) return
 			} catch (_) {}
 
 			e.preventDefault()
