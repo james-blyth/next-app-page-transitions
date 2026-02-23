@@ -194,11 +194,9 @@ function TransitionRouter({
 	// Built-in in-out mode: setup new page and clean up clone
 	const builtInEnter = useCallback(
 		_async_to_generator(function* (next) {
-			console.log('[TransitionRouter:builtInEnter] Starting enter transition, mode:', mode)
 			if (mode === 'in-out') {
 				const content = document.querySelector('[data-page-content]')
 				const oldPage = document.querySelector('[data-old-page]')
-				console.log('[TransitionRouter:builtInEnter] Found content:', !!content, 'oldPage:', !!oldPage)
 
 				if (content) {
 					// Reset opacity first (may have been set to 0 during leave)
@@ -212,14 +210,11 @@ function TransitionRouter({
 					content.style.height = '100vh'
 					content.style.zIndex = '10000' // Above the old page and overlay
 					content.style.visibility = 'visible'
-					console.log('[TransitionRouter:builtInEnter] Set content styles')
 				}
 
 				// Call custom enter callback if provided
 				if (enter) {
-					console.log('[TransitionRouter:builtInEnter] Calling custom enter callback')
 					yield enter(() => {
-						console.log('[TransitionRouter:builtInEnter] Custom enter callback finished, cleaning up')
 						// Clean up after enter animation - remove old page
 						if (oldPage) oldPage.remove()
 
@@ -234,11 +229,9 @@ function TransitionRouter({
 							content.style.opacity = ''
 							content.style.visibility = 'visible' // Keep visible after transition
 						}
-						console.log('[TransitionRouter:builtInEnter] Calling next() to complete transition')
 						next()
 					})
 				} else {
-					console.log('[TransitionRouter:builtInEnter] No custom enter, cleaning up')
 					// No custom enter, just cleanup old page
 					if (oldPage) oldPage.remove()
 					if (content) {
@@ -266,17 +259,13 @@ function TransitionRouter({
 
 	const navigate = useCallback(
 		_async_to_generator(function* (href, pathname, method = 'push', options) {
-			console.log('[TransitionRouter:navigate] Called with:', { href, pathname, method, stage })
-			if (stage === 'leaving') {
-				console.log('[TransitionRouter:navigate] Already leaving, returning')
-				return Promise.resolve()
-			}
+			if (stage === 'leaving') return Promise.resolve()
+
 			let next = () => router[method](href, options)
 			if (method === 'back') next = () => router.back()
 
 			// For back navigation, trigger transition
 			if (method === 'back') {
-				console.log('[TransitionRouter:navigate] Back navigation detected')
 				setStage('leaving')
 				leaveRef.current = yield builtInLeave(next, pathname, href)
 				return
@@ -284,14 +273,12 @@ function TransitionRouter({
 
 			// handle case where href is undefined
 			if (!href) {
-				console.log('[TransitionRouter:navigate] No href, calling next()')
 				next()
 				return
 			}
 
 			// skip transition for hash-only links
 			if (href.startsWith('#')) {
-				console.log('[TransitionRouter:navigate] Hash-only link, calling next()')
 				next()
 				return
 			}
@@ -301,9 +288,7 @@ function TransitionRouter({
 			try {
 				current = new URL(window.location.href)
 				target = new URL(href, current)
-				console.log('[TransitionRouter:navigate] URLs parsed:', { current: current.href, target: target.href })
 			} catch (error) {
-				console.log('[TransitionRouter:navigate] URL parsing error, calling next()')
 				next()
 				return
 			}
@@ -312,22 +297,15 @@ function TransitionRouter({
 				target.pathname === current.pathname && target.search === current.search && target.hash === current.hash
 			const isSamePathDifferentParams =
 				target.pathname === current.pathname && (target.search !== current.search || target.hash !== current.hash)
-			console.log('[TransitionRouter:navigate] Comparison:', {
-				isSamePage,
-				isSamePathDifferentParams,
-				sameOrigin: target.origin === current.origin,
-			})
 
 			if (
 				target.origin === current.origin && // same origin
 				!isSamePage && // not link to self
 				!isSamePathDifferentParams // not same pathname but different params
 			) {
-				console.log('[TransitionRouter:navigate] Triggering transition, setting stage to leaving')
 				setStage('leaving')
 				leaveRef.current = yield builtInLeave(next, pathname, href)
 			} else {
-				console.log('[TransitionRouter:navigate] No transition needed, calling next()')
 				next()
 			}
 		}),
@@ -340,12 +318,20 @@ function TransitionRouter({
 			let href = link == null ? void 0 : link.getAttribute('href')
 			const ignore = link == null ? void 0 : link.getAttribute('data-transition-ignore') // ignore only works in auto mode
 			if (!ignore && shouldLinkTriggerTransition(link, event)) {
-				event.preventDefault()
 				// Strip basePath from the DOM href since router.push() will re-add it
 				const basePath = process.env.__NEXT_ROUTER_BASEPATH || ''
 				if (basePath && href && href.startsWith(basePath)) {
 					href = href.slice(basePath.length) || '/'
 				}
+				// Skip if clicking a link to the current page
+				try {
+					const target = new URL(href, window.location.href)
+					const current = new URL(window.location.href)
+					if (target.pathname === current.pathname && target.search === current.search && target.hash === current.hash) {
+						return
+					}
+				} catch (_) {}
+				event.preventDefault()
 				navigate(href, pathname)
 			}
 		},
@@ -364,20 +350,15 @@ function TransitionRouter({
 	}, [auto, handleClick])
 
 	useEffect(() => {
-		console.log('[TransitionRouter:stage-effect] Stage changed to:', stage)
 		if (stage === 'entering') {
-			console.log('[TransitionRouter:stage-effect] Entering stage detected')
 			if (typeof leaveRef.current === 'function') leaveRef.current()
 			leaveRef.current = null
 			const runEnter = _async_to_generator(function* () {
-				console.log('[TransitionRouter:stage-effect] Running builtInEnter')
 				enterRef.current = yield Promise.resolve(
 					builtInEnter(() => {
-						console.log('[TransitionRouter:stage-effect] builtInEnter next() called, setting stage to none')
 						setStage('none')
 					})
 				)
-				console.log('[TransitionRouter:stage-effect] builtInEnter completed')
 			})
 			runEnter()
 		}
@@ -645,25 +626,33 @@ function useTransitionRouter() {
 
 function Link(props) {
 	const router = useTransitionRouter()
+	const pathname = usePathname()
 	const { href, as, replace, scroll } = props
 
 	const onClick = useCallback(
 		(e) => {
-			console.log('[TransitionRouter:Link] Link clicked', { href, as, replace })
 			if (props.onClick) props.onClick(e)
+			if (e.defaultPrevented) return
+
 			const link = e.currentTarget
+			if (!shouldLinkTriggerTransition(link, e)) return
+
 			const targetHref = as || href
-			console.log('[TransitionRouter:Link] Should trigger transition?', shouldLinkTriggerTransition(link, e))
-			if (shouldLinkTriggerTransition(link, e)) {
-				e.preventDefault()
-				console.log('[TransitionRouter:Link] Prevented default, calling navigate')
-				const navigate = replace ? router.replace : router.push
-				navigate(targetHref, {
-					scroll: scroll != null ? scroll : true,
-				})
-			}
+
+			// Skip if navigating to the current page
+			try {
+				const target = new URL(getUrlAsString(targetHref), window.location.href)
+				const current = new URL(window.location.href)
+				if (target.pathname === current.pathname && target.search === current.search && target.hash === current.hash) {
+					return
+				}
+			} catch (_) {}
+
+			e.preventDefault()
+			const nav = replace ? router.replace : router.push
+			nav(targetHref, { scroll: scroll != null ? scroll : true })
 		},
-		[props.onClick, href, as, replace, scroll, router.replace, router.push]
+		[props.onClick, href, as, replace, scroll, router.replace, router.push, pathname]
 	)
 
 	return jsx(
