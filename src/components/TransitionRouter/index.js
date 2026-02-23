@@ -337,10 +337,15 @@ function TransitionRouter({
 	const handleClick = useCallback(
 		(event) => {
 			const link = event.delegateTarget
-			const href = link == null ? void 0 : link.getAttribute('href')
+			let href = link == null ? void 0 : link.getAttribute('href')
 			const ignore = link == null ? void 0 : link.getAttribute('data-transition-ignore') // ignore only works in auto mode
 			if (!ignore && shouldLinkTriggerTransition(link, event)) {
 				event.preventDefault()
+				// Strip basePath from the DOM href since router.push() will re-add it
+				const basePath = process.env.__NEXT_ROUTER_BASEPATH || ''
+				if (basePath && href && href.startsWith(basePath)) {
+					href = href.slice(basePath.length) || '/'
+				}
 				navigate(href, pathname)
 			}
 		},
